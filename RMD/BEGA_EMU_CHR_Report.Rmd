@@ -1,0 +1,273 @@
+---
+title: "Catchment based Assessment for BEGA EMU"
+output: html_document
+classoption:
+- twocolumn
+---
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo          = FALSE, 
+                      warning       = FALSE, 
+                      message       = FALSE, 
+                      warning       = FALSE, 
+                      fig.fullwidth = TRUE, 
+                      paged.print   = FALSE, 
+                      comment       = NA)
+
+load('CHR_test_run.RData')
+
+```
+
+\
+\
+\
+
+:::::::::::::: {.columns}
+::: {.column width="50%"}
+
+## ** Harvestable Rights - Catchment based assessment: BEGA River Catchment EMU Summary **
+```{r fig.width = 15, fig.height = 8}
+
+EMU_plot <- 
+    
+    tm_shape(NSW_CHR_Water_Sources_aggregated_test) +
+    tm_polygons(col = "tan1") +
+    # tm_borders("black", lwd = 1) +
+    
+    tm_shape(EMU_dam_feat) +
+    tm_polygons(col = "lightblue") +
+    # tm_raster("elevation", palette = terrain.colors(10)) +
+    
+    tm_shape(EMU_Stream_Order) +
+    tm_lines(col="blue", lwd="STRAHLER", scale=2, legend.lwd.show = FALSE) +
+    
+    tm_scale_bar(breaks = c(0, 10, 20), text.size = 1,
+                 position=c("left", "bottom")) +
+    tm_compass(type = "arrow", size = 2, position = c("left", "top")) +
+    tm_layout(legend.outside = TRUE) +
+    tm_legend(position = c("left", "bottom"), bg.color = "grey95", frame = TRUE)
+
+
+EMU_plot
+
+```
+
+\
+\
+\
+
+## ** EMU Characteristics Snapshot (formatting and shortlist of variable tbd) **
+
+```{r}
+
+## Water source table of key variables 1).
+EMU_summary_tibble
+
+
+```
+
+
+:::::::::::::: {.columns}
+::: {.column width="40%"}
+
+
+## ** Harvestable Rights Limit Options – impact by theme  (can incl CC) **
+```{r fig.width = 20, fig.height = 12}
+
+plot_grid(EMU_theme_20, EMU_theme_30,
+          EMU_theme_40, EMU_theme_50, ncol = 2)
+
+
+```
+
+\
+\
+\
+
+## ** Summary of hydrology change across all gauges  (can incl CC) **
+
+```{r}
+
+## View here
+EMU_flow_flex
+
+```
+
+
+\newpage
+
+
+## ** Harvestable Rights - Catchment based assessment: Bega River Catchment EMU Summary **
+
+```{r}
+
+CHR_DC_EMU_master_flex
+
+```
+
+
+\newpage
+
+
+:::::::::::::: {.columns}
+::: {.column width="30%"}
+
+
+## ** Harvestable Rights - Catchment based assessment: Bega River Estuary and Tributaries WS1 **
+```{r fig.width = 10, fig.height = 5}
+
+EMU_plot
+
+```
+
+
+## ** Water Source 1: Characteristics Snapshot **
+
+```{r}
+
+## Water source table of key variables 1).
+WS_summary_tibble
+
+
+```
+
+
+
+## ** Water Source 1: Flow Duration Curve Changes (Each Scenario) **
+```{r fig.width = 10, fig.height = 5}
+
+fdc.10pc = fdc(baseline_ws_gauges_combined$`BEGA_219001_Rutherford Brown Mtn`,    new = TRUE,  ylab = "Q ft3/s", cex = 0.8)
+fdc.30pc =fdc(baseline_ws_gauges_combined$`BEGA_219001_Rutherford Brown Mtn_30%`, new = FALSE, col  = "red",     cex = 0.8)
+fdc.50pc =fdc(baseline_ws_gauges_combined$`BEGA_219001_Rutherford Brown Mtn_50%`, new = FALSE, col  = "blue",    cex = 0.8)
+legend("topright", c("10%", "30%", "50%"), col = c("black","red","blue"), lty = c(1,1,1))
+
+```
+
+
+:::::::::::::: {.columns}
+::: {.column width ="70%"}
+
+<!-- ## ** Water Source 1: Risk Per Decision Criteria ** -->
+```{r fig.width = 20, fig.height = 8}
+
+WS1_DC_10
+
+```
+
+
+```{r fig.width = 20, fig.height = 8}
+
+WS1_DC_50
+
+```
+
+
+
+
+\newpage
+
+
+:::::::::::::: {.columns}
+::: {.column width="30%"}
+
+
+## ** Harvestable Rights - Catchment based assessment: Mid Bega River Tributaries WS2 **
+```{r fig.width = 10, fig.height = 5}
+
+EMU_plot
+
+```
+
+
+## ** Water Source 2: Characteristics Snapshot **
+
+```{r}
+
+## Water source table of key variables 1).
+WS_summary_tibble 
+
+
+```
+
+
+
+## ** Water Source 2: Flow Duration Curve Changes (Each Option) **
+```{r fig.width = 10, fig.height = 5}
+
+fdc.10pc = fdc(baseline_ws_gauges_combined$`BEGA_219001_Rutherford Brown Mtn`,     new = TRUE,  ylab = "Q ft3/s", cex = 0.8)
+fdc.20pc = fdc(baseline_ws_gauges_combined$`BEGA_219001_Rutherford Brown Mtn_30%`, new = FALSE, col  = "red",     cex = 0.8)
+fdc.30pc = fdc(baseline_ws_gauges_combined$`BEGA_219001_Rutherford Brown Mtn_50%`, new = FALSE, col  = "blue",    cex = 0.8)
+legend("topright", c("10%", "30%", "50%"), col = c("black","red","blue"), lty = c(1,1,1))
+
+```
+
+
+:::::::::::::: {.columns}
+::: {.column width ="50%"}
+
+## ** Water Source 2: Risk Per Decision Criteria **
+```{r fig.width = 20, fig.height = 8}
+
+WS2_DC_10
+
+```
+
+```{r fig.width = 20, fig.height = 8}
+
+WS2_DC_50
+
+```
+
+
+\newpage
+
+
+\newpage
+
+## ** Harvestable Rights - Catchment based assessment: BEGA River Catchment EMU Summary Maps (10%) **
+```{r fig.width = 25, fig.height = 15}
+
+## Create a panel of tmaps
+tmap_arrange(DC_1.2_10_pc,
+             DC_1.3_10_pc,
+             DC_1.4_10_pc,
+             DC_1.7_10_pc,
+             ncol = 2,
+             nrow = 2)
+
+
+```
+
+\newpage
+
+
+## ** Harvestable Rights - Catchment based assessment: BEGA River Catchment EMU Summary Maps (30%) **
+```{r fig.width = 25, fig.height = 15}
+
+tmap_arrange(DC_1.2_10_pc,
+             DC_1.3_10_pc,
+             DC_1.4_10_pc,
+             DC_1.7_10_pc,
+             ncol = 2,
+             nrow = 2)
+
+```
+
+\newpage
+
+
+## ** Harvestable Rights - Catchment based assessment: BEGA River Catchment EMU Summary Maps (50%) **
+```{r fig.width = 40, fig.height = 12}
+
+tmap_arrange(DC_1.2_10_pc,
+             DC_1.3_10_pc,
+             DC_1.4_10_pc,
+             DC_1.7_10_pc,
+             ncol = 2,
+             nrow = 2)
+
+```
+
+

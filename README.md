@@ -1,1 +1,2 @@
-# coastal_harvest_rights_test
+# harvest_rights
+Repo for analysing harvest rights data
