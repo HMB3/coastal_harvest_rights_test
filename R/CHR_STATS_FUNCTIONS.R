@@ -43,7 +43,7 @@
 
 
 
-## Create a list of GWR analyses for each topic ----
+## Create a list of GAM analyses for each topic ----
 gam_formula_analyses <- function(yvars, 
                                  xvars,
                                  lim,

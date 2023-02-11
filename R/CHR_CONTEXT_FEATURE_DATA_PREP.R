@@ -214,7 +214,9 @@ if(read_context) {
     mutate(POA_length = nchar(POA))  %>% 
     filter(POA_length == 4)          %>% 
     replace(is.na(.), 0)             %>% 
-    mutate(POA = paste0('POA', POA)) %>% 
+    
+    mutate(POA = paste0('POA', POA),
+           REG_BOAT_TOT = PWCR + RV) %>% 
     rename(POA_CODE_2021 = POA)
   
   

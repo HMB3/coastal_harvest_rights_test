@@ -36,6 +36,9 @@ if(read_rasters) {
   ## 5a CSIRO Climate and Terrain ---- 
   
   ## Raster Names don't auto import anymore...this is every annoying
+  message('re-sample climate raster data to the same resolution')
+  
+  
   csiro_climate_names <- 
     list.files('./data/enviro/Rasters/CSIRO/', pattern = ".tif", full.names = FALSE) %>% 
     gsub('.tif', '', .)
@@ -80,10 +83,8 @@ if(read_rasters) {
   ## Convert all features to rasters - the numeric need to be translated into 
   ## categorical values again
   ## Turn the land use feature layer into a raster layer
+  message('re-sample veg raster data and create raster stack')
 
-
-  
-  
   
   ## 5c Vegetation Rasters ----
   NSW_forest_30m        <- raster('./data/enviro/Veg/alpsbk_structure_coastal_LAM.tif')
@@ -136,14 +137,11 @@ if(read_rasters) {
   
 } else {
   
-  
   message('loading raster data from R file')
   load('CHR_raster_data_environment.RData')
   
 }
 
-source('./R/CHR_DATA_ANALYSIS_FUNCTIONS.R')
-source('./R/CHR_DATA_PLOTTING_FUNCTIONS.R')
 
 
 ## Template raster

@@ -21,7 +21,7 @@ write_gam_results <- TRUE
 
 
 ## 
-if(harc_predict) {
+if(flow_predict) {
   
   
   ## Decision Criteria master table
@@ -80,7 +80,7 @@ if(harc_predict) {
              ifelse(GhostName == 'Nambucca', 
                     'Coastal Nambucca River Water Source', CHR_Water_Source))
   
-  write_csv(NSW_CHR_HARC_catch_profile, paste0(data_dir, 'HARC_Join_CHR_catch_profile.csv'))
+  write_csv(NSW_CHR_HARC_catch_profile, paste0(hydro_out, 'HARC_Join_CHR_catch_profile.csv'))
   
   
   ## Get the distinct values according to GhostName

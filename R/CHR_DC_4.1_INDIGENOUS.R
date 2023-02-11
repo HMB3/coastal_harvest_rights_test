@@ -202,8 +202,8 @@ NSW_CHR_WS_DC_4.2_AIMS <- NSW_CHR_Water_Sources_aggregated %>%
   left_join(., NSW_AIMS_CHR_counts, by = "CHR_Water_Source") %>% 
   
   
-  mutate(AIMS_density  = AIMS_Count/CHR_Sqkm,
-         DC_4.2_AIMS   = ntile(AIMS_density, 5)) %>% 
+  mutate(AIMS_density = AIMS_Count/CHR_Sqkm,
+         DC_4.2_AIMS  = ntile(AIMS_density, 5)) %>% 
   
   dplyr::select(CHR_Water_Source,  
                 AIMS_density,

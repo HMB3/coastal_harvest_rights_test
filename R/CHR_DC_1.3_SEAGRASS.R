@@ -394,7 +394,7 @@ EST_blue_carbon_int <- st_read(dsn   = NSW_CHR_WS_Intersections_database_loc,
   ## Consequence rating according to sum carbon storage potential divided by the area of the estuary.  
   ## Score of 1-5 obtained from a classification method for binning (20 percentiles).
   mutate(Est_CARB_area    = (Est_BLUE_CARB/Est_Ha)   %>% round(., 3),
-         Est_CARBON_Score = ntile(Est_CARB_area, 5)) %>% 
+         Est_CARBON_Score = ntile(Est_BLUE_CARB, 5)) %>% 
   
   ## SELECT
   dplyr::select(Est_No1, 

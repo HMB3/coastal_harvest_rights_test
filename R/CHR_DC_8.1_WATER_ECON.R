@@ -5,7 +5,7 @@
 
 # \ 
 # 
-# This code calculates consequence ratings for the Water-dependent mesaures of Economic Measures
+# This code calculates consequence ratings for the Water-dependent measures of Economic Measures
 #
 #   \
 

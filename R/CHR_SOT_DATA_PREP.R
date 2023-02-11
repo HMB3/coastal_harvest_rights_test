@@ -38,7 +38,9 @@ CHR_DC_master_table <- CHR_Decision_Criteria_master_table$DC_LUT %>%
 
 
 NSW_CHR_WS_FULL_LUT <- read_csv(paste0(catchment_data, 
-                                       'NSW_unreg_coastal_water_sources_aggregated_df.csv'))
+                                       'NSW_unreg_coastal_water_sources_aggregated_df.csv')) %>% 
+  
+  filter(CHR_Water_Source != 'Mid Shoalhaven RIver Management Zone')
 
 NSW_CHR_WS_EMU_LUT  <- NSW_CHR_WS_FULL_LUT %>% 
   
@@ -48,7 +50,9 @@ NSW_CHR_WS_EMU_LUT  <- NSW_CHR_WS_FULL_LUT %>%
 
 NSW_CHR_WS_EST_LUT  <- select(NSW_CHR_WS_FULL_LUT, 
                               CHR_Water_Source, 
-                              Est_No1) %>% distinct()
+                              Est_No1) %>% distinct() %>% 
+  
+  filter(CHR_Water_Source != 'Mid Shoalhaven RIver Management Zone')
 
 
 
@@ -114,7 +118,9 @@ NSW_CHR_WS_SAYER_NUM_LUT <-
   
   select(CHR_Water_Source, 
          IndicatNUM)  %>% 
-  arrange(IndicatNUM) %>% na.omit()
+  arrange(IndicatNUM) %>% na.omit() %>% 
+  
+  filter(CHR_Water_Source != 'Mid Shoalhaven RIver Management Zone')
 
 
 ## 
@@ -129,7 +135,7 @@ NSW_CHR_WS_NUM_EMU_LUT <- NSW_CHR_WS_EMU_LUT    %>%
 
 NSW_CHR_WS_NUM_LUT <- NSW_CHR_WS_NUM_EMU_LUT %>% 
   select(., CHR_Water_Source, IndicatNUM)    %>% 
-  distinct()
+  distinct() 
 
 
 
@@ -323,7 +329,7 @@ METRO1_HEVAE_rating <- HEVAE_ratings$`Metro1 dd_mm_yyyy` %>%
                 "Consequenc",
                 "Likelihood",
                 "Risk") %>% 
-
+  
   filter(RiskType   == 'freshes' |
            RiskType == '1.5ARI' |
            RiskType == '2.5ARI' | 
@@ -350,11 +356,11 @@ METRO2_HEVAE_rating <- HEVAE_ratings$`Metro2 15_12_2021` %>%
            RiskType == '2.5ARI' | 
            RiskType == 'zero flow periods' |
            RiskType == 'low flows') %>% 
-    
-    rename(CHR_Water_Source = WaterSourc) %>%
-    mutate(CHR_Water_Source = paste0(CHR_Water_Source, ' Management Zone'))
-
   
+  rename(CHR_Water_Source = WaterSourc) %>%
+  mutate(CHR_Water_Source = paste0(CHR_Water_Source, ' Management Zone'))
+
+
 METRO3_HEVAE_rating <- HEVAE_ratings$`Metro3 17_12_2021` %>%
   .[,colSums(is.na(.))<nrow(.)] %>%
   
@@ -442,16 +448,16 @@ HEAVAE_consequence_all <- bind_rows(Towamba_HEVAE_rating,
   
   ## Change categorical ratings to numeric
   mutate(## make the NA's 1 - 
-         Consequence_num = case_when((Consequenc == "VH") ~ 5.0,
-                                     (Consequenc == 'H')  ~ 4.0,
-                                     (Consequenc == "M")  ~ 3.0,
-                                     (Consequenc == "L")  ~ 2.0,
-                                     is.na(Consequenc)    ~ 1.0)) %>% 
+    Consequence_num = case_when((Consequenc == "VH") ~ 5.0,
+                                (Consequenc == 'H')  ~ 4.0,
+                                (Consequenc == "M")  ~ 3.0,
+                                (Consequenc == "L")  ~ 2.0,
+                                is.na(Consequenc)    ~ 1.0)) %>% 
   
   ## Remove white space from the
   mutate(CHR_Water_Source = str_trim(CHR_Water_Source))
 
-  ## May need to join on John's number to 
+## May need to join on John's number to 
 
 
 ## Only 250 HEAVE 
@@ -558,97 +564,32 @@ write_excel_csv(WS_vs_HEVAE_risk_all_matches_df,
 
 
 
-# 1c Threatened species tables ----
+# 1c SPATIAL TEMPLATES ----
 
 
-if(threat_species) {
+NSW_CHR_Water_Sources_aggregated <- 
   
-  HEAVAE_Species <- read_excel_allsheets(paste0(HEVAE_data,
-                                                'HEVAE_Species_Distinctive.xlsx'))
+  st_read(DPEW_Water_Source_database_loc,
+          layer = 'NSW_CHR_Water_Sources_aggregated') %>% 
+  filter(CHR_Water_Source != 'Mid Shoalhaven RIver Management Zone') 
+
+
+## Use BEGA/BROGO, and TWEED
+length(unique(NSW_CHR_WS_FULL_LUT$WATER_SHARING_PLAN))         ## 65 EMUs
+length(unique(NSW_CHR_WS_FULL_LUT$MAJOR_CATCH))                ## 34 Catch,ments
+length(unique(NSW_CHR_WS_FULL_LUT$EXTRACTION_MANAGEMENT_UNIT)) ## 65 EMUs
+length(unique(NSW_CHR_WS_FULL_LUT$CHR_Water_Source))           ## 65 EMUs
+
+
+EMU_list   <- unique(NSW_CHR_WS_FULL_LUT$EXTRACTION_MANAGEMENT_UNIT) %>% sort()
+EMU_test   <- c(EMU_list[5:6], EMU_list[57])
+WS_test    <- NSW_CHR_WS_FULL_LUT %>% 
   
-  names(HEAVAE_Species)
-  
-  
-  species_cols <- c("Common Name", 
-                    "Scientific Name", 
-                    "Abbreviation", 
-                    "Distinctiveness Parameter", 
-                    "Status Weights",
-                    "Flow sensitivty Weighting")
-  
-  
-  ## These need to be given the water source name, so they can be combined
-  COFFs_HEVAE_spp <- HEAVAE_Species$`Coffs-Bellinger species list` %>% 
-    .[,colSums(is.na(.))<nrow(.)]       %>% 
-    dplyr::select(all_of(species_cols)) %>% 
-    
-    rename(Status_Weights              = "Status Weights",
-           Flow_sensitivty             = "Flow sensitivty Weighting")
-  
-  HUNT_HEVAE_spp <- HEAVAE_Species$`Hunter Central - response-2019`       %>% 
-    .[,colSums(is.na(.))<nrow(.)] %>% dplyr::select(all_of(species_cols)) %>% 
-    
-    rename(Status_Weights              = "Status Weights",
-           Flow_sensitivty             = "Flow sensitivty Weighting")
-  
-  SYD_BAS_HEVAE_spp <- HEAVAE_Species$`Sydney Basin - as flow response`   %>% 
-    .[,colSums(is.na(.))<nrow(.)] %>% dplyr::select(all_of(species_cols)) %>% 
-    
-    rename(Status_Weights              = "Status Weights",
-           Flow_sensitivty             = "Flow sensitivty Weighting")                                                                                                                                            
-  
-  SYD_MET_HEVAE_spp <- HEAVAE_Species$`Sydney Metro - response 2019`      %>% 
-    .[,colSums(is.na(.))<nrow(.)] %>% dplyr::select(all_of(species_cols)) %>% 
-    
-    rename(Status_Weights              = "Status Weights",
-           Flow_sensitivty             = "Flow sensitivty Weighting")
-  
-  LOW_NTH_HEVAE_spp <- HEAVAE_Species$`Lower North Coast - sponse 2020`   %>% 
-    .[,colSums(is.na(.))<nrow(.)] %>% dplyr::select(all_of(species_cols)) %>% 
-    
-    rename(Status_Weights              = "Status Weights",
-           Flow_sensitivty             = "Flow sensitivty Weighting")
-  
-  FAR_NTH_HEVAE_spp <- HEAVAE_Species$`Far North Coast - response 2020`   %>% 
-    .[,colSums(is.na(.))<nrow(.)] %>% dplyr::select(all_of(species_cols)) %>% 
-    
-    rename(Status_Weights              = "Status Weights",
-           Flow_sensitivty             = "Flow sensitivty Weighting")
-  
-  FAR_STH_HEVAE_spp <- HEAVAE_Species$`Far South Coast - response 2020`   %>% 
-    .[,colSums(is.na(.))<nrow(.)] %>% dplyr::select(all_of(species_cols)) %>% 
-    
-    rename(Status_Weights              = "Status Weights",
-           Flow_sensitivty             = "Flow sensitivty Weighting")     %>% 
-    
-    mutate(Status_Weights  = as.numeric(Status_Weights),
-           Flow_sensitivty = as.numeric(Flow_sensitivty))
-  
-  
-  ## 
-  intersect(names(COFFs_HEVAE_spp), names(HUNT_HEVAE_spp))
-  intersect(names(COFFs_HEVAE_spp), names(FAR_STH_HEVAE_spp))
-  
-  
-  ## Combine species data
-  Water_Source_species <- bind_rows(COFFs_HEVAE_spp,
-                                    HUNT_HEVAE_spp,
-                                    SYD_BAS_HEVAE_spp,
-                                    SYD_MET_HEVAE_spp,
-                                    LOW_NTH_HEVAE_spp,
-                                    FAR_NTH_HEVAE_spp,
-                                    FAR_STH_HEVAE_spp) %>% 
-    
-    .[!is.na(.$`Common Name`),  ] %>% 
-    .[!is.na(.$Status_Weights), ]
-  
-  
-  write_csv(Water_Source_species,
-            paste0(HEVAE_data,
-                   'water_source_species_ranked.csv'))
-  
-  
-}
+  filter(EXTRACTION_MANAGEMENT_UNIT %in% EMU_test) %>% 
+  .$CHR_Water_Source %>% unique()   %>% sort()
+
+length(unique(WS_test))           ## 64 Test Water Sources
+
 
 
 ## Save data ----

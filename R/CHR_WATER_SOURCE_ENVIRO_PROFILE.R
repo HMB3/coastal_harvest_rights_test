@@ -23,13 +23,18 @@
 
 
 ## 
-if(enviro_summary) {
+enviro_summary <- FALSE
+zonal_stats    <- FALSE
+
+
+if(zonal_stats) {
   
   
   ## All the water source columns
   NSW_CHR_EMU_LUT <- 
-    read_csv(paste0(data_dir, 
-                    'NSW_CHR_Water_Sources_LUT.csv')) %>% 
+    
+    read_excel_allsheets(paste0(catchment_data, 
+                                'CHR_WS_NUM_HEVAE_LUT_Data.xlsx'))$NSW_CHR_WS_FULL_LUT %>% 
     
     dplyr::select(CHR_Water_Source, EXTRACTION_MANAGEMENT_UNIT) %>% 
     group_by(CHR_Water_Source,      EXTRACTION_MANAGEMENT_UNIT) %>% 
@@ -38,9 +43,15 @@ if(enviro_summary) {
   
   NSW_CHR_Water_Sources_aggregated <- 
     
-    st_read(dsn = paste0(data_dir, 
-                         'CHR_DPEW_Input_Water_Source_Data.gpkg'),
-            layer = 'NSW_CHR_Water_Sources_aggregated') 
+    st_read(dsn = DPEW_Water_Source_database_loc,
+            layer = 'NSW_CHR_Water_Sources_aggregated') %>% 
+    dplyr::filter(CHR_Water_Source != 'Mid Shoalhaven RIver Management Zone')
+  
+  
+  NSW_CHR_EMU_aggregated <- 
+    
+    st_read(dsn = DPEW_Water_Source_database_loc,
+            layer = 'NSW_CHR_EMU_aggregated')
   
   
   ## Get the stream density
@@ -52,95 +63,29 @@ if(enviro_summary) {
     read_csv(paste0(data_dir, 'NSW_harc_stream_density.csv'))
   
   
-  ## Update
-  HARC_Areas <- st_read(dsn = paste0(hydro_data, 
-                                     'HARC/HARC_catchments.shp')) %>% 
-    st_transform(., st_crs(8058)) %>% 
-    
-    dplyr::mutate(m2   = st_area(geometry),
-                  Harc_Ha   = units::set_units(m2, value = ha),
-                  Harc_Ha   = drop_units(Harc_Ha),
-                  
-                  Harc_Sqkm = units::set_units(m2, value = km2),
-                  Harc_Sqkm = drop_units(Harc_Sqkm))  
+  NSW_EMU_stream_density <- read_csv(paste0(catchment_data,
+                                            'NSW_EMU_stream_density.csv')) %>% 
+    na.omit()
+  
+  NSW_EMU_areas <- read_csv(paste0(catchment_data,
+                                   'NSW_CHR_EMU_Area.csv'))
   
   
   ## Aggregated water sources
   NSW_unreg_coastal_water_sources <-
     
-    st_read(dsn   = paste0(data_dir, 'CHR_DPEW_Input_Water_Source_Data.gpkg'),
+    st_read(dsn   =  DPEW_Water_Source_database_loc,
             layer = 'NSW_unreg_coastal_water_sources') 
   
-  
-  ## Use BEGA and Brogo
-  length(unique(NSW_CHR_EMU_LUT$EXTRACTION_MANAGEMENT_UNIT)) ## 65 EMUs
-  EMU_list   <- unique(NSW_CHR_EMU_LUT$EXTRACTION_MANAGEMENT_UNIT) %>% sort()
-  EMU_test   <- c(EMU_list[6])
-  WS_test    <- NSW_CHR_EMU_LUT %>% 
-    # filter(EXTRACTION_MANAGEMENT_UNIT == EMU_test) %>% 
-    .$CHR_Water_Source %>% unique() %>% sort()
-  
-  
-  
-  ## Subset the full WS to the test EMUs
-  NSW_EMU_test_area <- 
-    
-    NSW_unreg_coastal_water_sources %>% 
-    filter(EXTRACTION_MANAGEMENT_UNIT == EMU_test) %>% 
-    
-    ## group by UNREGULATED_WATER_SOURCE, W_Source_ID, don't care about the others
-    group_by(EXTRACTION_MANAGEMENT_UNIT) %>% 
-    
-    ## This creates slivers, which need to be removed...
-    summarize() %>% st_make_valid() %>% st_buffer(., 0.0) %>% 
-    nngeo::st_remove_holes() %>% 
-    
-    dplyr::mutate(EMU_m2   = st_area(geometry),
-                  EMU_Ha   = units::set_units(EMU_m2, value = ha),
-                  EMU_Ha   = drop_units(EMU_Ha),
-                  
-                  EMU_Sqkm = units::set_units(EMU_m2, value = km2),
-                  EMU_Sqkm = drop_units(EMU_Sqkm))
-  
-  ## Just the EMUs
-  NSW_EMU_test_units <- NSW_EMU_test_area %>% 
-    dplyr::select(EXTRACTION_MANAGEMENT_UNIT)
-  
-  
-  ## Subset the aggregated WS to the test EMUs 
-  NSW_CHR_Water_Sources_aggregated_test <- NSW_CHR_Water_Sources_aggregated %>% 
-    
-    .[.$CHR_Water_Source %in% WS_test, ] %>% 
-    st_intersection(., NSW_EMU_test_units)
-  
-  
-  plot(st_geometry(NSW_CHR_Water_Sources_aggregated_test))
-  plot(st_geometry(NSW_EMU_test_units))
-  plot(st_geometry(NSW_CHR_Water_Sources_aggregated_test), add = TRUE)
-  
-  
-  
-  ## Check enviro rasters
-  plot_rasters <- stack(water.source.grids.250m[['Max_temp_warm_month']],
-                        water.source.grids.250m[['Mean_diurnal_range']],
-                        water.source.grids.250m[['Min_temp_cold_month']],
-                        water.source.grids.250m[['Temp_annual_range']])
-  
-  
-  ckey <- list(labels = list(cex = 2))
-  coul <- colorRampPalette(brewer.pal(8, "PiYG"))(25)
-  
-  levelplot(plot_rasters,
-            col.regions = terrain.colors(10),
-            layout      = c(2, 2),
-            colorkey    = ckey)
-  
-  
-  
-  
-  # STEP 2 :: Calculate zonal stats ----
-  
-  
+ 
+}
+
+
+# STEP 2 :: Calculate zonal stats ----
+
+
+## WATER SOURCE ----
+if(zonal_stats) {
   
   ## If we are doing the zonal stats
   water_sources_zonal_stats_df <- WS_test %>%
@@ -192,8 +137,8 @@ if(enviro_summary) {
   
   
   
-  
-  EMU_zonal_stats_df <- EMU_test %>%
+  ## EMU STATS ----
+  EMU_zonal_stats_df <- unique(NSW_CHR_EMU_aggregated$EXTRACTION_MANAGEMENT_UNIT) %>%
     
     ## Pipe the list into lapply
     #emu = EMU_test[1]
@@ -202,9 +147,8 @@ if(enviro_summary) {
       message('calculate zonal stats for ', emu)
       
       ## subset the emu
-      emu_data <- NSW_EMU_test_area %>% 
-        filter(EXTRACTION_MANAGEMENT_UNIT == emu) #%>% 
-      #dplyr::select(-EMU_Hectares, -EMU_Sq_km)
+      emu_data <- NSW_CHR_EMU_aggregated %>% 
+        dplyr::filter(EXTRACTION_MANAGEMENT_UNIT == emu) 
       
       if(nrow(emu_data) >= 1) {
         
@@ -231,20 +175,20 @@ if(enviro_summary) {
         ## Bind the data together
         emu_zonal_data <- emu_data %>% 
           
-          bind_cols(., zonal_data) %>% as_tibble() %>% select(-geometry)
+          bind_cols(., zonal_data) %>% as_tibble() %>% select(-geom)
         
       } else {
         message('Check emu data ', emu, ' skip')
       }
       
       ## This should be distinct -check later
-    }) %>% dplyr::bind_rows(.) %>% as_tibble() 
+    }) %>% dplyr::bind_rows(.) %>% as_tibble() %>% na.omit()
   
   
   
   
   
-  ## Calc the zonal stats for the HARC areas
+  ## HARC STATS  ----
   HARC_zonal_stats_df <- unique(HARC_Areas$GhostName) %>%
     
     ## Pipe the list into lapply
@@ -255,7 +199,7 @@ if(enviro_summary) {
       
       ## subset the emu
       harc_data <- HARC_Areas %>% 
-        filter(GhostName == harc) 
+        dplyr::filter(GhostName == harc) 
       
       if(nrow(harc_data) >= 1) {
         
@@ -274,7 +218,7 @@ if(enviro_summary) {
         
         ## Can also use rasters with different resolutions if needed
         zonal_data <- zonal_median %>% 
-          bind_cols(., zonal_max) %>% 
+          bind_cols(., zonal_max)  %>% 
           bind_cols(., zonal_min)
         
         ## Can also use rasters with different resolutions if needed.
@@ -297,33 +241,49 @@ if(enviro_summary) {
   
   
   ## Combine the spatial data
-  NSW_CHR_Water_Sources_enviro_profile <- water_sources_zonal_stats_df %>% 
-    left_join(., NSW_water_sources_stream_density, by = "CHR_Water_Source") %>%  
+  NSW_CHR_Water_Sources_enviro_profile <- water_sources_zonal_stats_df     %>% 
     
-    select(CHR_Water_Source, Hectares, Sq_km,
+    left_join(., NSW_water_sources_stream_density, by = "CHR_Water_Source") %>%  
+    select(CHR_Water_Source, CHR_Ha, CHR_Sqkm,
            Stream_length_km, Stream_density_Sqkm, everything())
   
   
-  NSW_CHR_HARC_enviro_profile <- HARC_zonal_stats_df %>% 
-    left_join(., NSW_harc_stream_density, by = "GhostName") %>%  
+  NSW_CHR_HARC_enviro_profile <- HARC_zonal_stats_df        %>% 
     
+    left_join(., NSW_harc_stream_density, by = "GhostName") %>%  
     select(MAJOR_CATC, GhostName,
            Harc_Stream_length_km, 
            Harc_Stream_density_Sqkm,
            everything())
   
-  write_csv(NSW_CHR_Water_Sources_enviro_profile, 
-            paste0(enviro_out, 'NSW_CHR_Water_Sources_enviro_profile.csv'))
   
-  write_csv(EMU_zonal_stats_df, 
-            paste0(enviro_out, 'NSW_CHR_EMU_enviro_profile.csv'))
+  NSW_CHR_EMU_enviro_profile <- EMU_zonal_stats_df %>%
+    
+    left_join(., NSW_EMU_stream_density, by = "EXTRACTION_MANAGEMENT_UNIT") %>%  
+    left_join(., NSW_EMU_areas,          by = "EXTRACTION_MANAGEMENT_UNIT") %>%
+    
+    select(EXTRACTION_MANAGEMENT_UNIT, 
+           EMU_Ha, 
+           EMU_Sqkm,
+           EMU_Stream_length_km, 
+           EMU_Stream_density_Sqkm, 
+           everything())
+  
+  
+  write_csv(NSW_CHR_Water_Sources_enviro_profile, 
+            paste0(enviro_out, 'NSW_CHR_WS_PROFILE.csv'))
+  
+  write_csv(NSW_CHR_EMU_enviro_profile, 
+            paste0(enviro_out, 'NSW_CHR_EMU_PROFILE.csv'))
   
   write_csv(NSW_CHR_HARC_enviro_profile, 
-            paste0(enviro_out, 'NSW_CHR_HARC_enviro_profile.csv'))
+            paste0(enviro_out, 'NSW_CHR_HARC_PROFILE.csv'))
   
   gc()
   
 }
+
+
 
 
 

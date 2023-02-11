@@ -68,6 +68,9 @@ library(mgcViz)
 library(scam)
 library(gratia)
 library(fuzzyjoin)
+library(strex)
+library(psycModel)
+library(pagedown)
 
 
 data('sdmgen_packages')
@@ -77,7 +80,7 @@ ipak(sdmgen_packages)
 ## The functions expect these folders,
 main_dir             <- paste0(getwd(), "/")
 tempdir              <- './TEMP/'
-
+# project_dir          
 
 
 DPEW_spatial_data    <- './data/DPEW_data_sharing/Spatial_Datasets/'
@@ -113,9 +116,10 @@ DPEW_Water_Source_database_loc        <- paste0(catchment_data, 'CHR_DPEW_Input_
 NSW_Ecological_Layers_database_loc    <- paste0(eco_data,       'CHR_NSW_Input_Ecological_Layers_Data.gpkg')
 NSW_Context_Layers_database_loc       <- paste0(economic_data,  'CHR_NSW_Input_Context_Layers_Data.gpkg')
 NSW_CHR_WS_Intersections_database_loc <- paste0(conseq_out,     'NSW_CHR_WS_Intersection_Layers.gpkg')
+NSW_CHR_WS_HYDRO_Layers_database_loc  <- paste0(hydro_out,      'NSW_CHR_WS_Hydro_Layers.gpkg')
 NSW_CHR_WS_CONSEQ_Layers_database_loc <- paste0(conseq_out,     'NSW_CHR_WS_Consequence_Layers.gpkg')
-NSW_CHR_WS_LIKELY_Layers_database_loc <- paste0(likely_out,     'NSW_CHR_WS_Consequence_Layers.gpkg')
-NSW_CHR_WS_RISK_Layers_database_loc   <- paste0(risk_out,       'NSW_CHR_WS_Consequence_Layers.gpkg')
+NSW_CHR_WS_LIKELY_Layers_database_loc <- paste0(likely_out,     'NSW_CHR_WS_Likely_Layers.gpkg')
+NSW_CHR_WS_RISK_Layers_database_loc   <- paste0(risk_out,       'NSW_CHR_WS_Risk_Layers.gpkg')
 
 
 ## Try and set the raster temp directory to a location not on 
@@ -137,7 +141,7 @@ save_name   <- 'CHR_VESRION_0'
 source('./R/CHR_DATA_ANALYSIS_FUNCTIONS.R')
 source('./R/CHR_DATA_PLOTTING_FUNCTIONS.R')
 source('./R/CHR_STATS_FUNCTIONS.R')
-
+source('./R/CHR_TABLE_FUNCTIONS.R')
 
 
 

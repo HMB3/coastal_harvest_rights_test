@@ -25,6 +25,7 @@ EST  <- TRUE
 CARB <- TRUE
 NTT  <- FALSE
 GM   <- FALSE
+REP  <- TRUE
 
 
 
@@ -37,14 +38,7 @@ if(conseq_inter) {
   
   
   ## Read in water source geographies
-  NSW_CHR_Water_Sources_aggregated <- 
-    
-    ## Update
-    st_read(dsn = paste0(catchment_data, 
-                         'CHR_DPEW_Input_Water_Source_Data.gpkg'),
-            layer = 'NSW_CHR_Water_Sources_aggregated') %>% 
-    filter(CHR_Water_Source != 'Mid Shoalhaven RIver Management Zone') %>% 
-    st_transform(., st_crs(8058))
+  dim(NSW_CHR_Water_Sources_aggregated)
   
   
   
@@ -145,7 +139,7 @@ if(conseq_inter) {
   
   
   
-
+  
   
   ## DC 4.1 -----
   
@@ -177,7 +171,7 @@ if(conseq_inter) {
   }
   
   
-  ## DC 8.1 ----
+  ## DC 8.2 ----
   
   
   if(GM) {
@@ -185,6 +179,11 @@ if(conseq_inter) {
     ## Update
     NSW_2ND_LUE_GM <- st_read(dsn = NSW_Context_Layers_database_loc,
                               layer = 'NSW_2ND_LUE_GM')
+    
+    NSW_CHR_EMU <-
+      
+      st_read(dsn = DPEW_Water_Source_database_loc,
+              layer = 'NSW_CHR_EMU_aggregated')
     
     message('Intersecting Water Sources and Land Use')
     NSW_CHR_WS_LUE_int <- 
@@ -198,11 +197,103 @@ if(conseq_inter) {
              dsn        = NSW_CHR_WS_Intersections_database_loc,
              layer      = 'NSW_CHR_WS_LUE_int',
              quiet      = TRUE,
-             append     = TRUE,
-             delete_dsn = TRUE)
+             append     = TRUE)
+    
+    NSW_CHR_EMU_LUE_int <- 
+      
+      st_intersection(st_make_valid(NSW_CHR_EMU),   
+                      st_make_valid(NSW_2ND_LUE_GM)) 
+    
+    
+    message('Writing Water Sources and Land Use aIntersect')
+    st_write(NSW_CHR_EMU_LUE_int,
+             dsn        = NSW_CHR_WS_Intersections_database_loc,
+             layer      = 'NSW_CHR_EMU_LUE_int',
+             quiet      = TRUE,
+             append     = TRUE)
     
   }
   
+  
+  
+  ## EMU REPORT INTERSECTIONS ----
+  
+  if(REP) {
+    
+    # EMU_models   <- dam_subset_sort[grepl(EMU_subset_sort[1], dam_subset_sort)] 
+    # EMU_dam_feat <- dam_subset[[EMU_models[1]]] %>%
+    # 
+    #   st_transform(., st_crs(8058)) %>%
+    #   .[NSW_CHR_Water_Sources_aggregated_test, ] %>%
+    #   st_intersection(., NSW_CHR_Water_Sources_aggregated_test) %>%
+    #   filter(LandUseFactor > 0) %>%
+    #   mutate(Dams_Area = 'Landuse_Dam') %>%
+    # 
+    #   ## This creates slivers, which need to be removed...
+    #   group_by(Dams_Area) %>%
+    #   summarize() %>% st_make_valid() %>% st_buffer(., 0.0) %>%
+    #   nngeo::st_remove_holes()
+    
+    # EMU_dam_code_test <- c(EMU_subset_sort[1], EMU_subset_sort[19])
+    
+    
+    DAM_EMU_COMBO <- EMU_dam_code_test %>%
+      
+      ## EMU <- EMU_dam_code_test[2]
+      lapply(function(EMU) {
+        
+        message('combine dam areas ', EMU)
+        EMU_models <- dam_subset_sort[grepl(EMU, dam_subset_sort)] 
+        
+        ## only use these files :
+        # *_final_mga56
+        # *_hydropoints_off_SO3_above.
+        # *_hydroareas_off_SO3_above_mga56_var_100_9
+        
+        ## Just join everything to the one feature layer
+        dam_feat               <- dam_subset[[EMU_models[1]]] %>% 
+          filter(LandUseFactor > 0)     %>% 
+          st_transform(., st_crs(8058)) %>% st_make_valid() %>% 
+
+          group_by(EXTRACTION_MANAGEMENT_UNIT) %>% 
+          summarize() %>% st_make_valid() %>% st_buffer(., 0.0) %>%
+          nngeo::st_remove_holes()
+        
+        plot(st_geometry(dam_feat))
+      
+        
+      }) %>% bind_rows(.)
+    
+    
+
+    gc()
+    
+    message('Writing Water Sources and Land Use aIntersect')
+    st_write(DAM_EMU_COMBO,
+             dsn    = NSW_CHR_WS_Intersections_database_loc,
+             layer  = 'DAM_EMU_COMBO',
+             quiet  = TRUE,
+             append = TRUE)
+    
+    
+    ## Stream Order
+    EMU_Stream_Order   <- st_read(dsn   = paste0(catchment_data,
+                                                 "NSW_Coastal_Streams.gpkg"),
+                                  layer = 'NSW_Coastal_Streams') %>%
+      st_transform(., st_crs(8058)) %>%
+      st_crop(., NSW_CHR_Water_Sources_aggregated_test) %>%
+      st_intersection(., NSW_CHR_Water_Sources_aggregated_test) %>%
+      filter(., STRAHLER > 3)
+    
+    message('Writing Water Sources and Land Use aIntersect')
+    st_write(EMU_Stream_Order,
+             dsn        = NSW_CHR_WS_Intersections_database_loc,
+             layer      = 'EMU_Stream_Order',
+             quiet      = TRUE,
+             append     = TRUE)
+    
+    
+  }
   
 }
 
